@@ -29,6 +29,7 @@
 package gr.gousiosg.javacg.stat;
 
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.*;
 
 import java.util.ArrayList;
@@ -47,14 +48,16 @@ public class MethodVisitor extends EmptyVisitor {
     private MethodGen mg;
     private ConstantPoolGen cp;
     private String format;
+
+    private String callerSignature;
     private List<String> methodCalls = new ArrayList<>();
 
     public MethodVisitor(MethodGen m, JavaClass jc) {
         visitedClass = jc;
         mg = m;
         cp = mg.getConstantPool();
-        format = "M:" + visitedClass.getClassName() + ":" + mg.getName() + "(" + argumentList(mg.getArgumentTypes()) + ")"
-            + " " + "(%s)%s:%s(%s)";
+        callerSignature = visitedClass.getClassName() + ":" + mg.getName() + "(" + argumentList(mg.getArgumentTypes()) + ")";
+        format = "M:" + callerSignature + " " + "(%s)%s:%s(%s)";
     }
 
     private String argumentList(Type[] arguments) {
@@ -71,8 +74,8 @@ public class MethodVisitor extends EmptyVisitor {
     public List<String> start() {
         if (mg.isAbstract() || mg.isNative())
             return Collections.emptyList();
-
-        for (InstructionHandle ih = mg.getInstructionList().getStart(); 
+        System.out.println("D:" + callerSignature);
+        for (InstructionHandle ih = mg.getInstructionList().getStart();
                 ih != null; ih = ih.getNext()) {
             Instruction i = ih.getInstruction();
             

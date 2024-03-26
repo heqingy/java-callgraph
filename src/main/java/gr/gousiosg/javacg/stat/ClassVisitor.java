@@ -50,6 +50,9 @@ public class ClassVisitor extends EmptyVisitor {
     private ConstantPoolGen constants;
     private String classReferenceFormat;
     private String interfaceFormat;
+
+    private String superclassFormat;
+
     private final DynamicCallManager DCManager = new DynamicCallManager();
     private List<String> methodCalls = new ArrayList<>();
 
@@ -57,57 +60,22 @@ public class ClassVisitor extends EmptyVisitor {
         clazz = jc;
         constants = new ConstantPoolGen(clazz.getConstantPool());
         classReferenceFormat = "C:" + clazz.getClassName() + " %s";
-        interfaceFormat = "W:" + jc.getClassName()+ " %s";
-    }
-
-
-    private boolean declaresMethod(JavaClass javaClass, String methodName, String methodSignature) {
-        for (Method method : javaClass.getMethods()) {
-            if (method.getName().equals(methodName) &&
-                    Type.getMethodSignature(
-                            method.getReturnType(),
-                            method.getArgumentTypes())
-                                .equals(methodSignature)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String getSuperClassName(JavaClass jc, String methodName, String methodSignature) {
-        JavaClass superclass;
-        try {
-            superclass = jc.getSuperClass();
-            while (superclass != null) {
-                // Check if the superclass declares the method
-                if (declaresMethod(superclass, methodName, methodSignature)) {
-                    return superclass.getClassName();
-                }
-                // Move to the next superclass
-                superclass = superclass.getSuperClass();
-            }
-        } catch (ClassNotFoundException ignored) {
-        }
-        return null;
+        interfaceFormat = "I:" + jc.getClassName() + " %s";
+        superclassFormat = "S:" + jc.getClassName() + " %s";
     }
 
     public void visitJavaClass(JavaClass jc) {
         jc.getConstantPool().accept(this);
         Method[] methods = jc.getMethods();
+        for (String i : jc.getInterfaceNames()) {
+            System.out.println(String.format(interfaceFormat, i));
+        }
+        System.out.println(String.format(superclassFormat, jc.getSuperclassName()));
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             DCManager.retrieveCalls(method, jc);
             DCManager.linkCalls(method);
             method.accept(this);
-            if (method.isInterface()) {
-                String superclassName = getSuperClassName(
-                        jc,
-                        method.getName(),
-                        Type.getMethodSignature(
-                                method.getReturnType(),
-                                method.getArgumentTypes()));
-                System.out.println(String.format(interfaceFormat, superclassName));
-            }
         }
     }
 
