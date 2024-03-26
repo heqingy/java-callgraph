@@ -35,6 +35,7 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,10 @@ public class ClassVisitor extends EmptyVisitor {
     private JavaClass clazz;
     private ConstantPoolGen constants;
     private String classReferenceFormat;
+    private String interfaceFormat;
+
+    private String superclassFormat;
+
     private final DynamicCallManager DCManager = new DynamicCallManager();
     private List<String> methodCalls = new ArrayList<>();
 
@@ -55,17 +60,22 @@ public class ClassVisitor extends EmptyVisitor {
         clazz = jc;
         constants = new ConstantPoolGen(clazz.getConstantPool());
         classReferenceFormat = "C:" + clazz.getClassName() + " %s";
+        interfaceFormat = "I:" + jc.getClassName() + " %s";
+        superclassFormat = "S:" + jc.getClassName() + " %s";
     }
 
     public void visitJavaClass(JavaClass jc) {
         jc.getConstantPool().accept(this);
         Method[] methods = jc.getMethods();
+        for (String i : jc.getInterfaceNames()) {
+            System.out.println(String.format(interfaceFormat, i));
+        }
+        System.out.println(String.format(superclassFormat, jc.getSuperclassName()));
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             DCManager.retrieveCalls(method, jc);
             DCManager.linkCalls(method);
             method.accept(this);
-
         }
     }
 
